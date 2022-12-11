@@ -1,0 +1,13 @@
+C:/Users/MI/Desktop/parlaylib/cmake-build-debug/CMakeFiles/parlaylib.dir
+C:/Users/MI/Desktop/parlaylib/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/MI/Desktop/parlaylib/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+C:/Users/MI/Desktop/parlaylib/cmake-build-debug/CMakeFiles/list_install_components.dir
+C:/Users/MI/Desktop/parlaylib/cmake-build-debug/CMakeFiles/install.dir
+C:/Users/MI/Desktop/parlaylib/cmake-build-debug/CMakeFiles/install/local.dir
+C:/Users/MI/Desktop/parlaylib/cmake-build-debug/CMakeFiles/install/strip.dir
+C:/Users/MI/Desktop/parlaylib/cmake-build-debug/analysis/CMakeFiles/edit_cache.dir
+C:/Users/MI/Desktop/parlaylib/cmake-build-debug/analysis/CMakeFiles/rebuild_cache.dir
+C:/Users/MI/Desktop/parlaylib/cmake-build-debug/analysis/CMakeFiles/list_install_components.dir
+C:/Users/MI/Desktop/parlaylib/cmake-build-debug/analysis/CMakeFiles/install.dir
+C:/Users/MI/Desktop/parlaylib/cmake-build-debug/analysis/CMakeFiles/install/local.dir
+C:/Users/MI/Desktop/parlaylib/cmake-build-debug/analysis/CMakeFiles/install/strip.dir

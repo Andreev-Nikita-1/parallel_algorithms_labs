@@ -1,0 +1,26 @@
+"C:\Program Files\JetBrains\CLion 2022.2.4\bin\cmake\win\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=C:/Program Files/JetBrains/CLion 2022.2.4/bin/ninja/win/ninja.exe" -G Ninja -S C:\Users\MI\Desktop\parlaylib -B C:\Users\MI\Desktop\parlaylib\cmake-build-debug
+-- PARLAY VERSION 2.1.2
+-- --------------- General configuration -------------
+-- CMake Generator:                Ninja
+-- Compiler:                       GNU 11.2.0
+-- Build type:                     Debug
+-- CMAKE_CXX_FLAGS:                
+-- CMAKE_CXX_FLAGS_DEBUG:          -g
+-- CMAKE_CXX_FLAGS_RELEASE:        -O3 -DNDEBUG
+-- CMAKE_CXX_FLAGS_RELWITHDEBINFO: -O2 -g -DNDEBUG -fno-omit-frame-pointer
+-- CMAKE_EXE_LINKER_FLAGS          
+-- CMAKE_INSTALL_PREFIX:           C:/Program Files (x86)/PARLAY
+-- -------------------------- Static Analysis ------------------------
+-- cppcheck:                     Disabled (enable with -DENABLE_CPPCHECK=On)
+-- clang-tidy:                   Disabled (enable with -DENABLE_CLANG_TIDY=On)
+-- include-what-you-use:         Disabled (enable with -DENABLE_IWYU=On)
+-- -------------------------- Unit Tests ------------------------
+-- testing: Disabled (enable with -DPARLAY_TEST=On)
+-- ------------------- Benchmarks --------------------
+-- benchmarks: Disabled (enable with -DPARLAY_BENCHMARK=On)
+-- ------------------- Examples --------------------
+-- examples: Disabled (enable with -DPARLAY_EXAMPLES=On)
+-- example data: Off (add -DPARLAY_EXAMPLE_DATA=On to download)
+-- Configuring done
+-- Generating done
+-- Build files have been written to: C:/Users/MI/Desktop/parlaylib/cmake-build-debug
