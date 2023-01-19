@@ -4,101 +4,140 @@
 #include <chrono>
 #include "cassert"
 
-void qsort_posl(std::vector<int>& data, size_t L, size_t R) {
-  if (R - L <= 1) {
-    return;
-  }
-  int x = data[(L + R) / 2];
-  size_t l = L;
-  size_t r = R - 1;
-  while (true) {
-    while (data[l] < x)
-      l++;
-    while (data[r] > x)
-      r--;
-    if (l >= r) break;
-    int t = data[l];
-    data[l] = data[r];
-    data[r] = t;
-    l++;
-    r--;
-  }
-  qsort_posl(data, L, l);
-  qsort_posl(data, l, R);
-}
+#include "include/parlay/sequence.h"
 
-void qsort(std::vector<int>& data, size_t L, size_t R) {
-  if (R - L < 500) {
-    qsort_posl(data, L, R);
-  } else {
+#include <atomic>
 
-    int x = data[(L + R) / 2];
-    size_t l = L;
-    size_t r = R - 1;
-    while (true) {
-      while (data[l] < x)
-        l++;
-      while (data[r] > x)
-        r--;
-      if (l >= r) break;
-      int t = data[l];
-      data[l] = data[r];
-      data[r] = t;
-      l++;
-      r--;
+void bfs_posl(std::vector<std::vector<size_t>>& graph, std::vector<size_t>& dist) {
+  std::vector<size_t> frontier(1, 0);
+  size_t n = graph.size();
+  std::vector<int> visited(n, 0);
+  visited[0] = 1;
+  dist[0] = 0;
+  std::vector<size_t> frontier1;
+  while (!frontier.empty()) {
+    frontier1.clear();
+    for (auto v : frontier) {
+      for (auto u : graph[v]) {
+        if (!visited[u]) {
+          visited[u] = 1;
+          dist[u] = dist[v] + 1;
+          frontier1.push_back(u);
+        }
+      }
     }
-    parlay::par_do([&] { qsort(data, L, l); }, [&] { qsort(data, l, R); });
+    std::swap(frontier, frontier1);
   }
 }
 
-void test_par(std::vector<int>& data) {
-  qsort(data, 0, data.size());
-  for (int i = 0; i < data.size() - 1; i++) {
-    assert(data[i] <= data[i + 1]);
+void bfs_par(std::vector<std::vector<size_t>>& graph, std::vector<size_t>& dist) {
+  size_t n = graph.size();
+  parlay::sequence<size_t> frontier(1, 0);
+  parlay::sequence<size_t> frontier1;
+  parlay::sequence<std::atomic<int>> visited(n);
+  parlay::parallel_for(0, n, [&](size_t i) { visited[i] = 0; });
+  visited[0] = 1;
+  dist[0] = 0;
+  while (!frontier.empty()) {
+    parlay::sequence<size_t> degs = parlay::map(frontier, [&](size_t v) { return graph[v].size(); });
+    auto scan_res = parlay::scan(degs);
+    parlay::sequence<size_t> inds = scan_res.first;
+    size_t neighbours_total = scan_res.second;
+    frontier1 = parlay::sequence<size_t>(neighbours_total, 0);
+    parlay::parallel_for(0, frontier.size(), [&](size_t i) {
+      size_t v = frontier[i];
+      for (size_t j = 0; j < graph[v].size(); j++) {
+        size_t u = graph[v][j];
+        int expected = 0;
+        if (visited[u].compare_exchange_strong(expected, 1)) {
+          frontier1[inds[i] + j] = u;
+          dist[u] = dist[v] + 1;
+        }
+      }
+    });
+    frontier = parlay::filter(frontier1, [&](size_t v) { return v > 0; });
   }
 }
 
-void test_posl(std::vector<int>& data) {
-  qsort_posl(data, 0, data.size());
-  for (int i = 0; i < data.size() - 1; i++) {
-    assert(data[i] <= data[i + 1]);
+size_t flat(size_t i, size_t j, size_t k, size_t N) {
+  return i + j * N + k * N * N;
+}
+void fill_neighbours(size_t n, std::vector<size_t>& neighbours, size_t N) {
+  size_t i = n % N;
+  size_t j = (n / N) % N;
+  size_t k = (n / N / N) % N;
+  if (i > 0) neighbours.push_back(flat(i - 1, j, k, N));
+  if (i < N - 1) neighbours.push_back(flat(i + 1, j, k, N));
+  if (j > 0) neighbours.push_back(flat(i, j - 1, k, N));
+  if (j < N - 1) neighbours.push_back(flat(i, j + 1, k, N));
+  if (k > 0) neighbours.push_back(flat(i, j, k - 1, N));
+  if (k < N - 1) neighbours.push_back(flat(i, j, k + 1, N));
+}
+
+void validate_result(std::vector<size_t>& dists, size_t N) {
+  std::mt19937 gen(0);
+  std::uniform_int_distribution<> distr(1, N - 1);
+
+  for (int n = 0; n < 100; n++) {
+    int i = distr(gen);
+    int j = distr(gen);
+    int k = distr(gen);
+    assert(dists[flat(i, j, k, N)] == i + j + k);
   }
 }
 
 int main() {
 
-  std::mt19937 gen(0);
-  std::uniform_int_distribution<> distr(1, 100000000);
+  size_t N = 500;
+  std::vector<std::vector<size_t>> graph(N * N * N);
+  parlay::parallel_for(0, graph.size(), [&](size_t n) { fill_neighbours(n, graph[n], N); });
 
-  for (int i = 0; i < 10; i++) {
-    std::vector<int> vec_test1(100);
-    std::vector<int> vec_test2(100);
-    for (int i = 0; i < vec_test1.size(); i++) {
-      vec_test1[i] = distr(gen);
-      vec_test2[i] = vec_test1[i];
-    }
+  std::vector<size_t> result(graph.size(), 0);
 
-    test_par(vec_test1);
-    test_posl(vec_test2);
-  }
+  std::cout << "hi" << std::endl;
 
-
-  std::vector<int> vec1(100000000);
-  std::vector<int> vec2(100000000);
-  for (int i = 0; i < vec1.size(); i++) {
-    vec1[i] = distr(gen);
-    vec2[i] = vec1[i];
-  }
   auto start = std::chrono::steady_clock::now();
-  qsort(vec1, 0, vec1.size());
+  bfs_par(graph, result);
   auto end = std::chrono::steady_clock::now();
-  std::cout << "parallel time: "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << std::endl;
+  auto time_sum = end - start;
+  std::cout << "parallel run time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+            << "ms" << std::endl;
+  validate_result(result, N);
+  for (int i = 0; i < 4; i++) {
+    start = std::chrono::steady_clock::now();
+    bfs_par(graph, result);
+    end = std::chrono::steady_clock::now();
+    std::cout << "parallel run time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+              << "ms" << std::endl;
+    time_sum += end - start;
+  }
+  time_sum /= 5;
+  auto par_time = time_sum;
 
+  std::vector<size_t> result1(graph.size(), 0);
   start = std::chrono::steady_clock::now();
-  qsort_posl(vec2, 0, vec1.size());
+  bfs_posl(graph, result1);
   end = std::chrono::steady_clock::now();
-  std::cout << "posled time: "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << std::endl;
+  time_sum = end - start;
+  std::cout << "posledovatelniy run time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+            << "ms" << std::endl;
+  validate_result(result1, N);
+  for (int i = 0; i < 4; i++) {
+    start = std::chrono::steady_clock::now();
+    bfs_posl(graph, result1);
+    end = std::chrono::steady_clock::now();
+    std::cout << "posledovatelniy run time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+              << "ms" << std::endl;
+    time_sum += end - start;
+  }
+  time_sum /= 5;
+  auto posl_time = time_sum;
+
+  std::cout << "avg parallel time by 5 runs: "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(par_time).count() << "ms" << std::endl;
+
+  std::cout << "avg posledovatelniy time by 5 runs: "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(posl_time).count() << "ms" << std::endl;
+
   return 0;
 }
